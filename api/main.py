@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
 import numpy as np
@@ -29,10 +30,19 @@ async def predict(
     image = read_file_as_image(await file.read())
     image_batch = np.expand_dims(image, 0)
 
-    predictions = MODEL.predict(image_batch)
+    json_data = {
+        "instances": image_batch.tolist()
+    }
 
-    predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
-    confidence = np.max(predictions[0])
+    response = requests.post(endpoint, json=json_data)
+    prediction = np.array(response.json()["predictions"][0])
+    # predictions = MODEL.predict(image_batch)
+    #
+    # predicted_class = CLASS_NAMES[np.argmax(predictions[0])]
+    # confidence = np.max(predictions[0])
+
+    predicted_class = CLASS_NAMES[np.argmax(prediction)]
+    confidence = np.max(prediction)
 
     return {
         'class': predicted_class,
